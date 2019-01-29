@@ -20,6 +20,7 @@ import numpy as np
 import time
 from numba.decorators import jit
 from input_func import input_func
+import random
 
 import os
 import sys
@@ -33,10 +34,16 @@ cache_size = np.ones(n_cache) * cache
 #ep_video_requests = np.random.random([n_ep, n_video]).astype(np.int)
 #gain_latence = np.random.random([n_ep, n_cache]).astype(np.int)
 #cache = np.zeros([n_cache])
-#output = np.zeros([n_cache, n_video], dtype=np.bool)
+output = np.zeros([n_cache, video_size.shape[0]], dtype=np.bool)
 
 def get_best_video(cache_idx):
-    pass
+    best_video = None
+    best_video_score =0
+    for video_idx in range(gain_score.shape[0]):
+        if gain_score[cache_idx, video_idx] > best_video_score and cache_size[cache_idx] > video_size[video_idx]:
+            best_video = video_idx
+            best_video_score = gain_score[cache_idx, video_idx]
+    return best_video
 
 
 gain_score = gain_latence.T.dot(ep_video_requests)  # shape =  VxC
@@ -55,17 +62,24 @@ for video_idx in range(video_size.shape[0]):
 print("gain_score shape is {}".format(gain_score))
 print(gain_score)
 
-exit(0)
-#n_cache
 
+cache_available = set([i for i in range(cache_size.shape[0])])
 
-
-for cache_idx in range(n_cache):
-    start = time.time()
+while len(cache_available) > 0:
+    cache_idx = random.choice(list(cache_available))
     best_video_idx = get_best_video(cache_idx)
-    duration = time.time() - start
-    #print(f"Duration is {duration}")
-    #print(best_video_idx)
+
+    if best_video_idx is None:
+        cache_available.remove(cache_idx)
+        continue
+
+    # associate best video to cache
+    output[cache_idx, video_idx] = 1
+    cache_size[cache_idx] -= video_size[video_idx]
+
+
+print("FIN")
+
 
 
 
