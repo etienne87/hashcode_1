@@ -1,6 +1,7 @@
-import input_func as funky
 import time
 import numpy as np
+import input_func as funky
+import compute_score
 
 
 def compute_gains(latency, requests):
@@ -11,16 +12,6 @@ def compute_gains(latency, requests):
     """
     return latency.dot(requests)
 
-
-def update_gain(gains, v, c, connexion_cache_to_endpoint):
-    """
-    put video v into cache c: update all caches gain / video
-    :param gains:
-    :param video_num:
-    :param cache_num:
-    :return:
-    """
-    pass
 
 
 def optimize_gain(gains, memory, latency, requests):
@@ -46,6 +37,71 @@ def get_connexions(latency):
     return list
 
 
+def update_gain(gains, v, c, connexion_cache_to_endpoint):
+    """
+    put video v into cache c: update all caches gain / video
+    :param gains:
+    :param video_num:
+    :param cache_num:
+    :return:
+    """
+    pass
+
+
+def knapsack_one_cache(vals, capacity, sizes, mask, n=None):
+    """
+
+    :param val: value/ video for this cache
+    :param capacity:
+    :param video_sizes:
+    :param n: iteration number, starts at len(video_sizes)
+    :return:
+    """
+    if n is None:
+        n = len(sizes)
+
+    if n == 0 or capacity == 0:
+        return 0
+
+    #cannot include current video
+    if (sizes[n - 1] > capacity):
+        mask += [0]
+        return knapsack_one_cache(vals, capacity, sizes, mask, n-1)
+
+    #return max between taking & not taking
+    else:
+        #case 1 : we take the video
+        val1 = vals[n - 1] + knapsack_one_cache(vals, capacity - sizes[n - 1], sizes, n - 1)
+
+        #backtrack
+        mask = mask[:-2]
+
+        #case 2: we do not take the video
+        val2 = knapsack_one_cache(vals, capacity, sizes, n-1)
+
+        if val1 > val2:
+            mask += [ (val1 > val2) ]
+
+        return max(val1, val2)
+
+
+def knapSack(W, wt, val, n):
+    K = [[0 for x in range(W + 1)] for x in range(n + 1)]
+
+    # Build table K[][] in bottom up manner
+    for i in range(n + 1):
+        for w in range(W + 1):
+            if i == 0 or w == 0:
+                K[i][w] = 0
+            elif wt[i - 1] <= w:
+                K[i][w] = max(val[i - 1] + K[i - 1][w - wt[i - 1]], K[i - 1][w])
+            else:
+                K[i][w] = K[i - 1][w]
+
+    return K[n][W]
+
+
+
 if __name__ == '__main__':
     file_path = ""
 
@@ -58,9 +114,16 @@ if __name__ == '__main__':
     E, V = requests.shape
     E, C = latency.shape
 
-    connex = get_connexions(latency)
+    #connex = get_connexions(latency)
 
-    print(connex)
+    good = np.zeros((C, V), dtype=np.int32)
+
+    for i in range(C):
+        knapSack((cache_size, 4))
+
+    score = compute_score.compute_score(file_path, good)
+
+    print("Score: ", score)
 
     memory = np.full((C,), cache_size)
 
@@ -81,4 +144,4 @@ if __name__ == '__main__':
     runtime = time.time()-start
 
     print(runtime)
-    print(gains.shape)
+    #print(gains.shape)
