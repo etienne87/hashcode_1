@@ -53,16 +53,33 @@ def compute_score_transition(s1, s2):
 
 def compute_score(input_path, submit_path):
     horiz, horiz_ids, vert, vert_ids, dic, all_tags = input_func(input_path)
-
     slideshow = read_submission(submit_path, all_tags)
-
     score = 0
-
     for i in range(len(slideshow)-1):
         score += compute_score_transition(slideshow[i], slideshow[i+1])
-
     return score
-    
+
+
+
+
+def photo_ids_to_tags(photo_ids, all_tags):
+    slideshow = []
+    for photo_id in photo_ids:
+        tags = []
+        for id in photo_id:
+            tags += all_tags[photo_id]
+        slideshow.append(tags)
+    return slideshow
+
+
+def compute_score_submit_ids(input_path, photo_ids):
+    horiz, horiz_ids, vert, vert_ids, dic, all_tags = input_func(input_path)
+    slideshow = photo_ids_to_tags(photo_ids, all_tags)
+    score = 0
+    for i in range(len(slideshow) - 1):
+        score += compute_score_transition(slideshow[i], slideshow[i + 1])
+    return score
+
 
 if __name__ == '__main__':
     inpath = 'data/a_example.txt'
