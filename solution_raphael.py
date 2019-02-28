@@ -32,7 +32,7 @@ def add_image_to_slide(idx, result_list, array_availability, list_all):
 
 def find_next_image(last_image, list_all, array_availability):
 
-    MIN_SCORE = 2
+    MIN_SCORE = 5
 
     list_available = np.where(array_availability==1)[0]
     max_score = 0
@@ -77,11 +77,12 @@ def main():
 
 
 
-   # file_name = "c_memorable_moments"
-   # file_name = "b_lovely_landscapes"
+    #file_name = "c_memorable_moments"
+    #file_name = "b_lovely_landscapes"
     file_name = "d_pet_pictures"
-   # file_name = "e_shiny_selfies"
+    #file_name = "e_shiny_selfies"
 
+    print("processing file", file_name)
 
 
     file_path = "data/"+file_name+".txt"
@@ -122,7 +123,7 @@ def main():
         last_image = list_all[idx_next]
 
         if i%1000==0:
-            out_path_debug = "raphael2_"+file_name+"_debug_{}.out".format(i)
+            out_path_debug = "debug/raphael2_"+file_name+"_debug_{}.out".format(i)
             write_output(result_list, out_path_debug)
             print(compute_score(file_path, out_path_debug))
 
