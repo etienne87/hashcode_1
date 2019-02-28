@@ -28,18 +28,21 @@ def add_image_to_slide(idx, result_list, array_availability, list_all):
     return 0
 
 
-
+MIN_SCORE = 1
 
 def find_next_image(last_image, list_all, array_availability):
 
-    MIN_SCORE = 5
 
     list_available = np.where(array_availability==1)[0]
     max_score = 0
     best_id = "bla"
     for idx in list_available:
+
+        tag_length = len(last_image[1])
+        if tag_length < 3:
+            break
         score = compute_score_transition(last_image[1], list_all[idx][1])
-        if score >= MIN_SCORE:
+        if score >= min(MIN_SCORE, tag_length//2):
             return idx
         if score >max_score:
             max_score=score
@@ -79,11 +82,11 @@ def main():
 
     #file_name = "c_memorable_moments"
     #file_name = "b_lovely_landscapes"
-    file_name = "d_pet_pictures"
-    #file_name = "e_shiny_selfies"
+    #file_name = "d_pet_pictures"
+    file_name = "e_shiny_selfies"
 
     print("processing file", file_name)
-
+    print("MIN_SCORE_IS", MIN_SCORE)
 
     file_path = "data/"+file_name+".txt"
 
