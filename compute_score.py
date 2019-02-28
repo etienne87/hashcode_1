@@ -15,8 +15,8 @@ from input_func import input_func
 
 #    file_path = "/home/toromanoff/workspace/hashcode_1/streaming/trending_today.in"
 
-def compute_score(file_path, matrice_cache_video):
-    print("IN COMPUTE SCORE, matrice_cache_video = ", matrice_cache_video)
+def compute_score(file_path):
+    #print("IN COMPUTE SCORE, matrice_cache_video = ", matrice_cache_video)
     video_size, cache_size, gain_per_ep_per_cach, nb_request_per_ep_per_video = input_func(file_path)
     
     matrice_endpoint_request = nb_request_per_ep_per_video # Dim endpoint * video inside nb_request
