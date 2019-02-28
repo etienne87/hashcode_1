@@ -61,11 +61,11 @@ def add_image_to_slide(idx, result_list, array_availability, list_all):
     return 0
 
 
-MIN_SCORE = 8
-
+MIN_SCORE = 100
+REAL_MIN = 2
 
 def find_next_image(last_image, list_all, array_availability):
-
+    global MIN_SCORE
 
     list_available = np.where(array_availability==1)[0]
     max_score = 0
@@ -73,10 +73,11 @@ def find_next_image(last_image, list_all, array_availability):
     for idx in list_available:
 
         tag_length = len(last_image[1])
+        tag_length_2 = len(list_all[idx][1])
         if tag_length < 3:
             break
         score = compute_score_transition(last_image[1], list_all[idx][1])
-        if score >= min(MIN_SCORE, tag_length//2):
+        if score >= min([MIN_SCORE, tag_length//2,tag_length_2]):
             return idx
         if score >max_score:
             max_score=score
@@ -84,6 +85,9 @@ def find_next_image(last_image, list_all, array_availability):
 
 
     if max_score>0:
+        if not MIN_SCORE==REAL_MIN:
+            print("MIN SCORE")
+            MIN_SCORE = max(MIN_SCORE-1,REAL_MIN)
         return best_id
 
     idx = list_available[np.random.randint(len(list_available))]
@@ -114,10 +118,10 @@ def main():
 
 
 
-    #file_name = "c_memorable_moments"
-    # file_name = "b_lovely_landscapes"
-    file_name = "d_pet_pictures"
-    #file_name = "e_shiny_selfies"
+    # file_name = "c_memorable_moments"
+    #file_name = "b_lovely_landscapes"
+    #file_name = "d_pet_pictures"
+    file_name = "e_shiny_selfies"
 
     print("processing file", file_name)
     print("MIN_SCORE_IS", MIN_SCORE)
@@ -132,19 +136,18 @@ def main():
     print("number of horizontals :", len(horizontals))
     print("number of verticals :", len(verticals))
 
-    list_horiz = formatting_input(horizontals, horizontal_ids)
-    list_vert = formatting_input(verticals, vertical_ids)
 
 
-    print("parsing done")
-
-    list_horiz_bonus = get_horiz_from_vert(list_vert)
-
+    lh = list(zip(horizontal_ids, horizontals))
+    vh = list(zip(vertical_ids, verticals))
+    lh = lh + get_horiz_from_vert(vh)
+    #sort by num tags
+    cat = [(len(tags), (id, tags) ) for id, tags in lh]
+    z = sorted(cat,key=lambda x:x[0])[::-1]
+    list_all = [item[1] for item in z]
 
 
     result_list = []
-
-    list_all = list_horiz+list_horiz_bonus
     array_availability = np.ones(len(list_all))
 
 
