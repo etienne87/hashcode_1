@@ -11,7 +11,7 @@ import os
 import sys
 from input_func import input_func
 
-def read_submission(path):
+def read_submission(path, all_tags):
     slideshow = []
     with open(path, 'r') as f:
         lines = f.readlines()
@@ -21,14 +21,15 @@ def read_submission(path):
 
             tags = []
             for word in words:
-                tags.append(int(word))
+                photo_id = int(word)
+                tags += all_tags[photo_id]
 
             slideshow.append(tags)
 
     return slideshow
 
 
-def compute_score_transition(s1: list, s2: list):
+def compute_score_transition(s1, s2):
     """
     compute score transition
 
@@ -50,9 +51,10 @@ def compute_score_transition(s1: list, s2: list):
     return score
 
 
-def compute_score(path):
-    slideshow = read_submission(path)
-    print(slideshow)
+def compute_score(input_path, submit_path):
+    horiz, horiz_ids, vert, vert_ids, dic, all_tags = input_func(input_path)
+
+    slideshow = read_submission(submit_path, all_tags)
 
     score = 0
 
@@ -63,8 +65,9 @@ def compute_score(path):
     
 
 if __name__ == '__main__':
-    path = 'submit_bidon.txt'
-    score = compute_score(path)
+    inpath = 'data/a_example.txt'
+    outpath = 'submit_bidon.txt'
+    score = compute_score(inpath, outpath)
     print(score)
 
 

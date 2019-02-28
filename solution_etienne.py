@@ -4,6 +4,9 @@ import input_func
 import compute_score
 
 
+def maximize_horiz(horiz, horiz_ids, taken):
+
+
 
 
 if __name__ == '__main__':
@@ -12,6 +15,6 @@ if __name__ == '__main__':
     horizontals, horizontal_ids, verticals, vertical_ids, dic = input_func.input_func(file_path)
 
 
-    print(horizontals[0], dic)
+    maximize_horiz
 
 

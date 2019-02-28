@@ -7,6 +7,7 @@ def input_func(path):
     horizontal_ids = []
     verticals = []
     vertical_ids = []
+    total_tags = []
     cnt = 0
 
     with open(path, 'r') as f:
@@ -36,20 +37,24 @@ def input_func(path):
                 vertical_ids.append(i)
                 verticals.append(tags)
 
+            total_tags.append(tags)
+
     # print(horizontals[1])
     # print(dic)
 
-    return horizontals, horizontal_ids, verticals, vertical_ids, dic
+    return horizontals, horizontal_ids, verticals, vertical_ids, dic, total_tags
 
 
 
 if __name__ == '__main__':
     file_path = "data/a_example.txt"
 
-    horizontals, horizontal_ids, verticals, vertical_ids, dic = input_func(file_path)
+    horizontals, horizontal_ids, verticals, vertical_ids, dic, all_tags = input_func(file_path)
 
 
-    print(horizontals[0], dic)
+    #print(horizontals[0], dic)
+
+    print(all_tags)
 
 
 
