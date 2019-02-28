@@ -12,7 +12,7 @@ def get_horiz_from_vert(list_vert):
     half_length = len(list_vert)//2
     list_horiz_bonus = []
     for i in range(half_length):
-        list_horiz_bonus += (str(list_vert[2*i][0])+", "+str(list_vert[2*i+1][0]), list(set(list_vert[2*i][1]+list_vert[2*i+1][1])))
+        list_horiz_bonus += [(str(list_vert[2*i][0])+" "+str(list_vert[2*i+1][0]), list(set(list_vert[2*i][1]+list_vert[2*i+1][1])))]
     return list_horiz_bonus
 
 
@@ -49,7 +49,9 @@ def find_next_image(last_image, list_all, array_availability):
 
 def write_output(result_list, filename):
 
+
     with open(filename, 'w') as file:
+        file.write(str(len(result_list))+"\n")
         for line in result_list:
             file.write(line+"\n")
 
@@ -67,7 +69,7 @@ def main():
 
     file_path = "data/a_example.txt"
 
-    horizontals, horizontal_ids, verticals, vertical_ids, dic = input_func(file_path)
+    horizontals, horizontal_ids, verticals, vertical_ids, dic, all_tags = input_func(file_path)
 
 
 
@@ -94,11 +96,13 @@ def main():
     last_image = list_all[id_first]
 
 
-    for i in range(min(len(list_all),100)):
+    for i in range(min(len(list_all)-1,100)):
         idx_next = find_next_image(last_image, list_all, array_availability)
         add_image_to_slide(idx_next, result_list, array_availability, list_all)
         last_image = list_all[idx_next]
 
+        print("one_more_image")
+        print(result_list)
 
     write_output(result_list, "raphael_test.out")
 
