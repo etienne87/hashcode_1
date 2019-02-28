@@ -8,8 +8,12 @@ from compute_score import compute_score
 
 list_name_input = ["a_example", "b_lovely_landscapes", "c_memorable_moments", "d_pet_pictures", "e_shiny_selfies"]
 
-name_file_input = list_name_input[4]
-heurisitc_score_bien = 9
+name_file_input = list_name_input[2]
+heurisitc_score_bien = 100
+
+pourcentage_max_heuristic = 1
+
+use_sorted = False
 
 file_path = "/home/toromanoff/workspace/hashcode_1/data/input/"+name_file_input+".txt"
 
@@ -57,11 +61,33 @@ def get_horiz_from_vert(vertical_ids, verticals_tags):
         pair_horiz_tags.append(get_tag_pair_vertical(verticals_tags[2*i], verticals_tags[2*i+1]))
     return pair_horiz_ids, pair_horiz_tags
 
+def get_horiz_from_vert_raph(list_vert):
+
+    half_length = len(list_vert)//2
+    list_horiz_bonus = []
+    for i in range(half_length):
+        list_horiz_bonus += [(str(list_vert[2*i][0])+" "+str(list_vert[2*i+1][0]), list(set(list_vert[2*i][1]+list_vert[2*i+1][1])))]
+    return list_horiz_bonus
+
 # TO IMPROVE WE JUST PUT TOGETHER CONSECUTIVE VERTICAL
 pair_horiz_ids, pair_horiz_tags = get_horiz_from_vert(vertical_ids, verticals_tags)
 
 all_tags = horizontals_tags + pair_horiz_tags
 all_ids = horizontal_ids + pair_horiz_ids
+
+if use_sorted:
+
+    lh = list(zip(horizontal_ids, horizontals_tags))
+    vh = list(zip(vertical_ids, verticals_tags))
+    horiz_vert = get_horiz_from_vert_raph(vh)
+    lh = lh + get_horiz_from_vert_raph(vh)
+    #sort by num tags
+    cat = [(len(tags), (id, tags) ) for id, tags in lh]
+    z = sorted(cat)[::-1]
+    final = [item[1] for item in z]
+    
+    all_tags = [item[1] for item in final]
+    all_ids = [item[0] for item in final]
 
 position_photo_available = [i for i in range(len(all_tags))]
 
@@ -71,7 +97,6 @@ first_photo_position = np.random.randint(0,len(all_tags))
 position_photo_available.remove(first_photo_position)
 
 position_photo_right = first_photo_position
-position_photo_left = first_photo_position
 
 solution_final = [first_photo_position]
 
@@ -80,6 +105,8 @@ solution_final = [first_photo_position]
 print("name_file_input = ", name_file_input)
 print("(len(all_tags) = ", len(all_tags))
 print("heurisitc_score_bien= ", heurisitc_score_bien)
+print("pourcentage_max_heuristic= ", pourcentage_max_heuristic)
+print("use_sorted= ", use_sorted)
 
 start_time = time.time()
 
@@ -88,39 +115,23 @@ while len(position_photo_available) > 0:
         print("len(position_photo_available) = ", len(position_photo_available) )
         print("duration = " , time.time() - start_time)
         start_time = time.time()
-    left = False
     position_max_current_score = position_photo_available[0]
-    current_score_left = compute_score_transition(all_tags[position_photo_left], all_tags[position_max_current_score])
     current_score_right = compute_score_transition(all_tags[position_photo_right], all_tags[position_max_current_score])
-    if current_score_right > current_score_left:
-        left = True
         
-    max_current_score = max(current_score_left, current_score_right)
+    max_current_score = current_score_right
     
     for position_photo_still_available in position_photo_available[1:]:
-        
-        if heurisitc_score_bien < max_current_score:
+#        print("int(len(all_tags[position_photo_right])/2) = ", int(len(all_tags[position_photo_right])/2))
+        if min(pourcentage_max_heuristic *int(len(all_tags[position_photo_right])/2), heurisitc_score_bien) < max_current_score:
             break
         
-        current_score_left = compute_score_transition(all_tags[position_photo_left], all_tags[position_photo_still_available])
         current_score_right = compute_score_transition(all_tags[position_photo_right], all_tags[position_photo_still_available])
-        if current_score_right > max_current_score and current_score_right > current_score_left:
+        if current_score_right > max_current_score:
             position_max_current_score = position_photo_still_available
             max_current_score = current_score_right
-            left = False
-            
-        elif current_score_left > max_current_score and current_score_left > current_score_right:
-            position_max_current_score = position_photo_still_available
-            max_current_score = current_score_left
-            left = True
 
-    if left:
-        solution_final.insert(0,position_max_current_score)
-        position_photo_left = position_max_current_score
-        
-    else:
-        solution_final.append(position_max_current_score)
-        position_photo_right = position_max_current_score       
+    solution_final.append(position_max_current_score)
+    position_photo_right = position_max_current_score       
         
     position_photo_available.remove(position_max_current_score)
 
@@ -134,8 +145,10 @@ print("name_file_input = ", name_file_input)
 print("(len(all_tags) = ", len(all_tags))
 print("heurisitc_score_bien= ", heurisitc_score_bien)
 
-write_output(vrai_solution_final , "/home/toromanoff/workspace/hashcode_1/data/"+name_file_input+str(heurisitc_score_bien)+".out")
-
+if use_sorted:
+    write_output(vrai_solution_final , "/home/toromanoff/workspace/hashcode_1/data/"+name_file_input+str(heurisitc_score_bien)+"sortednew"+str(pourcentage_max_heuristic)+".out")
+else:
+    write_output(vrai_solution_final , "/home/toromanoff/workspace/hashcode_1/data/"+name_file_input+str(heurisitc_score_bien)+"new"+str(pourcentage_max_heuristic)+".out")
 #list_horizontal, list_vertical = input_func(file_path)
 
 #list_horizontal liste de liste avec id photo + set id tag
