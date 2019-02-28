@@ -44,9 +44,9 @@ def input_func(path):
 
 
 if __name__ == '__main__':
-    file_path = "example_bidon.txt"
+    file_path = "data/a_example.txt"
 
-    horizontals, horizontal_ids, verticals, vertical_ids, dic = input_func.input_func(file_path)
+    horizontals, horizontal_ids, verticals, vertical_ids, dic = input_func(file_path)
 
 
     print(horizontals[0], dic)
