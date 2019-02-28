@@ -62,7 +62,7 @@ def add_image_to_slide(idx, result_list, array_availability, list_all):
 
 
 MIN_SCORE = 100
-REAL_MIN = 2
+REAL_MIN = 1
 
 def find_next_image(last_image, list_all, array_availability):
     global MIN_SCORE
@@ -119,9 +119,9 @@ def main():
 
 
     # file_name = "c_memorable_moments"
-    #file_name = "b_lovely_landscapes"
+    file_name = "b_lovely_landscapes"
     #file_name = "d_pet_pictures"
-    file_name = "e_shiny_selfies"
+    #file_name = "e_shiny_selfies"
 
     print("processing file", file_name)
     print("MIN_SCORE_IS", MIN_SCORE)
