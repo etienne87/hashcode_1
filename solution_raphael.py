@@ -7,12 +7,45 @@ from tqdm import tqdm
 
 
 
+ACCEPTABLE_LOSS = 0
+def find_best_match_vert(curr_vert, list_available, list_verts):
+
+
+
+    set_to_match = set(curr_vert[1])
+    loss_min = -1
+    best_vert = "bla"
+    for idx in list_available:
+        set_tmp = set(list_verts[idx][1])
+        loss = len(set_to_match.intersection(set_tmp))
+        if loss_min <0 or loss<loss_min:
+            loss_min = loss
+            best_vert = idx
+            if loss <= ACCEPTABLE_LOSS:
+                return best_vert
+
+    return best_vert
+
+
+
 def get_horiz_from_vert(list_vert):
 
-    half_length = len(list_vert)//2
+    array_available_verts = np.ones(len(list_vert))
+
+
     list_horiz_bonus = []
-    for i in range(half_length):
-        list_horiz_bonus += [(str(list_vert[2*i][0])+" "+str(list_vert[2*i+1][0]), list(set(list_vert[2*i][1]+list_vert[2*i+1][1])))]
+    count = len(list_vert)
+    for i in tqdm(range(len(list_vert)//2)):
+
+        list_available = np.where(array_available_verts==1)[0]
+        next_vert = list_vert[list_available[0]]
+        array_available_verts[list_available[0]]=0
+        other_next_id = find_best_match_vert(next_vert, list_available[1:], list_vert)
+        other_next = list_vert[other_next_id]
+        array_available_verts[other_next_id]=0
+        list_horiz_bonus += [(str(next_vert[0])+" "+str(other_next[0]), list(set(next_vert[1]+other_next[1])))]
+
+
     return list_horiz_bonus
 
 
@@ -28,10 +61,11 @@ def add_image_to_slide(idx, result_list, array_availability, list_all):
     return 0
 
 
-MIN_SCORE = 1
+MIN_SCORE = 100
+REAL_MIN = 1
 
 def find_next_image(last_image, list_all, array_availability):
-
+    global MIN_SCORE
 
     list_available = np.where(array_availability==1)[0]
     max_score = 0
@@ -39,10 +73,11 @@ def find_next_image(last_image, list_all, array_availability):
     for idx in list_available:
 
         tag_length = len(last_image[1])
+        tag_length_2 = len(list_all[idx][1])
         if tag_length < 3:
             break
         score = compute_score_transition(last_image[1], list_all[idx][1])
-        if score >= min(MIN_SCORE, tag_length//2):
+        if score >= min([MIN_SCORE, tag_length//2,tag_length_2]):
             return idx
         if score >max_score:
             max_score=score
@@ -50,6 +85,9 @@ def find_next_image(last_image, list_all, array_availability):
 
 
     if max_score>0:
+        if not MIN_SCORE==REAL_MIN:
+            print("MIN SCORE")
+            MIN_SCORE = max(MIN_SCORE-1,REAL_MIN)
         return best_id
 
     idx = list_available[np.random.randint(len(list_available))]
@@ -80,13 +118,14 @@ def main():
 
 
 
-    #file_name = "c_memorable_moments"
-    #file_name = "b_lovely_landscapes"
+    # file_name = "c_memorable_moments"
+    file_name = "b_lovely_landscapes"
     #file_name = "d_pet_pictures"
-    file_name = "e_shiny_selfies"
+    #file_name = "e_shiny_selfies"
 
     print("processing file", file_name)
     print("MIN_SCORE_IS", MIN_SCORE)
+    print("ACCEPTABLE LOSS IS", ACCEPTABLE_LOSS)
 
     file_path = "data/"+file_name+".txt"
 
@@ -97,18 +136,18 @@ def main():
     print("number of horizontals :", len(horizontals))
     print("number of verticals :", len(verticals))
 
-    list_horiz = formatting_input(horizontals, horizontal_ids)
-    list_vert = formatting_input(verticals, vertical_ids)
 
 
-    print("parsing done")
-
-    list_horiz_bonus = get_horiz_from_vert(list_vert)
+    lh = list(zip(horizontal_ids, horizontals))
+    vh = list(zip(vertical_ids, verticals))
+    lh = lh + get_horiz_from_vert(vh)
+    #sort by num tags
+    cat = [(len(tags), (id, tags) ) for id, tags in lh]
+    z = sorted(cat,key=lambda x:x[0])[::-1]
+    list_all = [item[1] for item in z]
 
 
     result_list = []
-
-    list_all = list_horiz+list_horiz_bonus
     array_availability = np.ones(len(list_all))
 
 
