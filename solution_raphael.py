@@ -7,12 +7,45 @@ from tqdm import tqdm
 
 
 
+ACCEPTABLE_LOSS = 0
+def find_best_match_vert(curr_vert, list_available, list_verts):
+
+
+
+    set_to_match = set(curr_vert[1])
+    loss_min = -1
+    best_vert = "bla"
+    for idx in list_available:
+        set_tmp = set(list_verts[idx][1])
+        loss = len(set_to_match.intersection(set_tmp))
+        if loss_min <0 or loss<loss_min:
+            loss_min = loss
+            best_vert = idx
+            if loss <= ACCEPTABLE_LOSS:
+                return best_vert
+
+    return best_vert
+
+
+
 def get_horiz_from_vert(list_vert):
 
-    half_length = len(list_vert)//2
+    array_available_verts = np.ones(len(list_vert))
+
+
     list_horiz_bonus = []
-    for i in range(half_length):
-        list_horiz_bonus += [(str(list_vert[2*i][0])+" "+str(list_vert[2*i+1][0]), list(set(list_vert[2*i][1]+list_vert[2*i+1][1])))]
+    count = len(list_vert)
+    for i in tqdm(range(len(list_vert)//2)):
+
+        list_available = np.where(array_available_verts==1)[0]
+        next_vert = list_vert[list_available[0]]
+        array_available_verts[list_available[0]]=0
+        other_next_id = find_best_match_vert(next_vert, list_available[1:], list_vert)
+        other_next = list_vert[other_next_id]
+        array_available_verts[other_next_id]=0
+        list_horiz_bonus += [(str(next_vert[0])+" "+str(other_next[0]), list(set(next_vert[1]+other_next[1])))]
+
+
     return list_horiz_bonus
 
 
@@ -28,7 +61,8 @@ def add_image_to_slide(idx, result_list, array_availability, list_all):
     return 0
 
 
-MIN_SCORE = 1
+MIN_SCORE = 8
+
 
 def find_next_image(last_image, list_all, array_availability):
 
@@ -81,12 +115,13 @@ def main():
 
 
     #file_name = "c_memorable_moments"
-    #file_name = "b_lovely_landscapes"
-    #file_name = "d_pet_pictures"
-    file_name = "e_shiny_selfies"
+    # file_name = "b_lovely_landscapes"
+    file_name = "d_pet_pictures"
+    #file_name = "e_shiny_selfies"
 
     print("processing file", file_name)
     print("MIN_SCORE_IS", MIN_SCORE)
+    print("ACCEPTABLE LOSS IS", ACCEPTABLE_LOSS)
 
     file_path = "data/"+file_name+".txt"
 
@@ -104,6 +139,7 @@ def main():
     print("parsing done")
 
     list_horiz_bonus = get_horiz_from_vert(list_vert)
+
 
 
     result_list = []
