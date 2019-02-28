@@ -2,104 +2,159 @@ import numpy as np
 import os
 import sys
 from input_func import input_func
+import time
 
 from compute_score import compute_score
 
+list_name_input = ["a_example", "b_lovely_landscapes", "c_memorable_moments", "d_pet_pictures", "e_shiny_selfies"]
 
-file_path = "/home/toromanoff/workspace/hashcode_1/streaming/simple_example.in"
+name_file_input = list_name_input[4]
+heurisitc_score_bien = 9
+
+file_path = "/home/toromanoff/workspace/hashcode_1/data/input/"+name_file_input+".txt"
+
+horizontals_tags, horizontal_ids, verticals_tags, vertical_ids, dic, all_tags = input_func(file_path)
+
+#print(horizontals_tags, horizontal_ids, verticals_tags, vertical_ids, dic, all_tags)
+
+def write_output(result_list, filename):
+    with open(filename, 'w') as file:
+        file.write(str(len(result_list))+"\n")
+        for line in result_list:
+            file.write(str(line)+"\n")
+
+def compute_score_transition(s1: list, s2: list):
+    """
+    compute score transition
+
+    :param s1:
+    :param s2:
+    :return:
+
+    assert(compute_score_transition([1,2,3], [3,5,6]) == 1)
+    assert(compute_score_transition([1,2], [6]) == 0)
+    assert(compute_score_transition([1,2,3, 4], [3,4,5,6]) == 2)
+    """
+    s1 = set(s1)
+    s2 = set(s2)
+    s_intersection = len(s1.intersection(s2))
+    s_in_s1_not_in_s2 = len([tag for tag in s1 if tag not in s2])
+    s_in_s2_not_in_s1 = len([tag for tag in s2 if tag not in s1])
+
+    score = min([s_intersection,s_in_s1_not_in_s2, s_in_s2_not_in_s1])
+    return score
+
+def get_tag_pair_vertical(tag_vertical_0, tag_vertical_1):
+    return list(set(tag_vertical_0 + tag_vertical_1))
+
+def get_horiz_from_vert(vertical_ids, verticals_tags):
+
+    half_length = int(len(vertical_ids)/2)
+    pair_horiz_ids = []
+    pair_horiz_tags = []
+    for i in range(half_length):
+        pair_horiz_ids.append(str(vertical_ids[2*i]) + " " + str(vertical_ids[2*i+1]))
+        pair_horiz_tags.append(get_tag_pair_vertical(verticals_tags[2*i], verticals_tags[2*i+1]))
+    return pair_horiz_ids, pair_horiz_tags
+
+# TO IMPROVE WE JUST PUT TOGETHER CONSECUTIVE VERTICAL
+pair_horiz_ids, pair_horiz_tags = get_horiz_from_vert(vertical_ids, verticals_tags)
+
+all_tags = horizontals_tags + pair_horiz_tags
+all_ids = horizontal_ids + pair_horiz_ids
+
+position_photo_available = [i for i in range(len(all_tags))]
+
+assert len(all_tags) == len(all_ids)
+
+first_photo_position = np.random.randint(0,len(all_tags))
+position_photo_available.remove(first_photo_position)
+
+position_photo_right = first_photo_position
+position_photo_left = first_photo_position
+
+solution_final = [first_photo_position]
 
 
-video_size, cache_size, gain_per_ep_per_cach, nb_request_per_ep_per_video = input_func(file_path)
 
-matrice_endpoint_request = nb_request_per_ep_per_video # Dim endpoint * video inside nb_request
-matrice_size_video = video_size # Dim video * 1 inside  size video
-cache_size = cache_size # Initial capacity of cache
-matrice_gain = gain_per_ep_per_cach # endpoint * cache inside gain to take this cache from this endpoint
+print("name_file_input = ", name_file_input)
+print("(len(all_tags) = ", len(all_tags))
+print("heurisitc_score_bien= ", heurisitc_score_bien)
 
-print("matrice_endpoint_request = ", matrice_endpoint_request)
-print("matrice_size_video = ", matrice_size_video)
-print("cache_size = ", cache_size)
-print("matrice_gain = ", matrice_gain)
+start_time = time.time()
 
-#matrice_cache_video # Output nb cache * nb video True if video is in cache False if not
-
-nb_endpoint = matrice_endpoint_request.shape[0]
-nb_video = matrice_endpoint_request.shape[1]
-assert nb_video == matrice_size_video.shape[0]
-nb_cache = matrice_gain.shape[1]
-
-print("nb_endpoint = ", nb_endpoint)
-print("nb_video = ", nb_video)
-print("nb_cache = ", nb_cache)
-
-# Tab of size endpoint and for each endpoint id create a list containing all 
-#cache connected and the gain
-tab_endpoint_cache = [[] for i in range(nb_endpoint)] 
-
-# Tab of size cache and for each cache id create a list containing all 
-#video that we put on this cache
-tab_cache_video = [[] for i in range(nb_cache)]
-
-tab_capacity_cache = np.ones(nb_cache) * cache_size
-
-for id_endpoint in range(nb_endpoint):
-    for id_cache in range(nb_cache):
-        current_gain = matrice_gain[id_endpoint, id_cache]
-        if current_gain > 0:
-            tab_endpoint_cache[id_endpoint].append((current_gain, id_cache))
-
-print("tab_endpoint_cache = ", tab_endpoint_cache)
-         
-# We want to sort all cache by gain, the first will be the one with bigger gain
-for id_endpoint in range(nb_endpoint):
-    not_sorted_gain_for_current_endpoint = tab_endpoint_cache[id_endpoint]
-    sorted_gain_for_current_endpoint = sorted(not_sorted_gain_for_current_endpoint, key=lambda tup: tup[0], reverse = True)
-    tab_endpoint_cache[id_endpoint] = sorted_gain_for_current_endpoint
-
-print("tab_endpoint_cache = ", tab_endpoint_cache)
-
-for id_endpoint in range(nb_endpoint):
-    while np.max(matrice_endpoint_request[id_endpoint]) > 0:
-        video_id = np.argmax(matrice_endpoint_request[id_endpoint])
+while len(position_photo_available) > 0:
+    if len(position_photo_available) % 1000 == 0:
+        print("len(position_photo_available) = ", len(position_photo_available) )
+        print("duration = " , time.time() - start_time)
+        start_time = time.time()
+    left = False
+    position_max_current_score = position_photo_available[0]
+    current_score_left = compute_score_transition(all_tags[position_photo_left], all_tags[position_max_current_score])
+    current_score_right = compute_score_transition(all_tags[position_photo_right], all_tags[position_max_current_score])
+    if current_score_right > current_score_left:
+        left = True
         
-        video_already_available = False
+    max_current_score = max(current_score_left, current_score_right)
+    
+    for position_photo_still_available in position_photo_available[1:]:
         
-        for (current_gain, id_cache) in tab_endpoint_cache[id_endpoint]:
-            if video_id in tab_cache_video[id_cache]:
-                #The video is in a cache we stop
-                video_already_available = True
-                break
+        if heurisitc_score_bien < max_current_score:
+            break
+        
+        current_score_left = compute_score_transition(all_tags[position_photo_left], all_tags[position_photo_still_available])
+        current_score_right = compute_score_transition(all_tags[position_photo_right], all_tags[position_photo_still_available])
+        if current_score_right > max_current_score and current_score_right > current_score_left:
+            position_max_current_score = position_photo_still_available
+            max_current_score = current_score_right
+            left = False
             
-        if video_already_available:
-            matrice_endpoint_request[id_endpoint, video_id] = 0    
-        else:
-        #The gain are sorted in the tab_endpoint_cache tab
-           for (current_gain, id_cache) in tab_endpoint_cache[id_endpoint]:
-               if tab_capacity_cache[id_cache] > matrice_size_video[video_id]:
-                   tab_cache_video[id_cache].append(video_id)
-                   tab_capacity_cache[id_cache] -= matrice_size_video[video_id]
-                   break
-           matrice_endpoint_request[id_endpoint, video_id] = 0
-       
-print("tab_cache_video = " ,tab_cache_video)    
+        elif current_score_left > max_current_score and current_score_left > current_score_right:
+            position_max_current_score = position_photo_still_available
+            max_current_score = current_score_left
+            left = True
 
-matrice_cache_video = np.zeros((nb_cache, nb_video))
-for id_cache in range(nb_cache):
-    for id_video in tab_cache_video[id_cache]:
-        matrice_cache_video[id_cache, id_video] = 1
+    if left:
+        solution_final.insert(0,position_max_current_score)
+        position_photo_left = position_max_current_score
         
-print(" matrice_cache_video = " , matrice_cache_video)   
+    else:
+        solution_final.append(position_max_current_score)
+        position_photo_right = position_max_current_score       
+        
+    position_photo_available.remove(position_max_current_score)
 
-score_solution_marin = compute_score(file_path, matrice_cache_video)
+#print("solution_final = ", solution_final)
 
-test_output_simple_exemple = np.zeros((nb_cache, nb_video))
-test_output_simple_exemple[0,2] = 1
-test_output_simple_exemple[1,1] = 1
-test_output_simple_exemple[1,3] = 1
-test_output_simple_exemple[2,0] = 1
-test_output_simple_exemple[2,1] = 1
+vrai_solution_final = [all_ids[i] for i in solution_final]
 
-score_output_simple_exemple = compute_score(file_path, test_output_simple_exemple)
+#print("vrai_solution_final = ", vrai_solution_final)
+   
+print("name_file_input = ", name_file_input)
+print("(len(all_tags) = ", len(all_tags))
+print("heurisitc_score_bien= ", heurisitc_score_bien)
 
-print(" score_solution_marin = " , score_solution_marin)
-print(" score_output_simple_exemple = " , score_output_simple_exemple) 
+write_output(vrai_solution_final , "/home/toromanoff/workspace/hashcode_1/data/"+name_file_input+str(heurisitc_score_bien)+".out")
+
+#list_horizontal, list_vertical = input_func(file_path)
+
+#list_horizontal liste de liste avec id photo + set id tag
+#list_vertical liste de liste avec id photo + set id tag
+
+#list_id_vertical = "TODO GET ALL ID VERTICAL"
+
+#from itertools import combinations
+#
+#list_all_pair_vertical = [",".join(map(str, comb)) for comb in combinations(list_id_vertical, 2)]
+#
+
+#
+#def get_number_tag_pair_vertical(id_vertical_0, id_vertical_1):
+#    return len(set(id_vertical_0 + id_vertical_1))
+#
+#
+#for pair_vertical in list_all_pair_vertical:
+    
+    
+#list_vertical_transformed_to_horizontal = get_horiz_from_vert(list_vertical)
+
