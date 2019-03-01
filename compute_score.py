@@ -10,7 +10,7 @@ import numpy as np
 import os
 import sys
 from input_func import input_func
-
+import time
 def read_submission(path, all_tags):
     slideshow = []
     with open(path, 'r') as f:
@@ -44,10 +44,10 @@ def compute_score_transition(s1, s2):
     s1 = set(s1)
     s2 = set(s2)
     s_intersection = len(s1.intersection(s2))
-    s_in_s1_not_in_s2 = len([tag for tag in s1 if tag not in s2])
-    s_in_s2_not_in_s1 = len([tag for tag in s2 if tag not in s1])
+    s_in_s1_not_in_s2 = len(s1)-s_intersection
+    s_in_s2_not_in_s1 = len(s2)-s_intersection
 
-    score = min([s_intersection,s_in_s1_not_in_s2, s_in_s2_not_in_s1])
+    score = min([s_intersection, s_in_s1_not_in_s2, s_in_s2_not_in_s1])
     return score
 
 

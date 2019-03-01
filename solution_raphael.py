@@ -34,7 +34,6 @@ def get_horiz_from_vert(list_vert):
 
 
     list_horiz_bonus = []
-    count = len(list_vert)
     for i in tqdm(range(len(list_vert)//2)):
 
         list_available = np.where(array_available_verts==1)[0]
@@ -62,7 +61,7 @@ def add_image_to_slide(idx, result_list, array_availability, list_all):
 
 
 MIN_SCORE = 100
-REAL_MIN = 1
+REAL_MIN = 10
 
 def find_next_image(last_image, list_all, array_availability):
     global MIN_SCORE
@@ -77,16 +76,16 @@ def find_next_image(last_image, list_all, array_availability):
         if tag_length < 3:
             break
         score = compute_score_transition(last_image[1], list_all[idx][1])
-        if score >= min([MIN_SCORE, tag_length//2,tag_length_2]):
+        if score >= min([MIN_SCORE, tag_length//2, tag_length_2//2]):
             return idx
-        if score >max_score:
+        if score >=max_score:
             max_score=score
             best_id=idx
 
 
     if max_score>0:
         if not MIN_SCORE==REAL_MIN:
-            print("MIN SCORE")
+            print("MIN SCORE", MIN_SCORE    )
             MIN_SCORE = max(MIN_SCORE-1,REAL_MIN)
         return best_id
 
@@ -120,8 +119,8 @@ def main():
 
     # file_name = "c_memorable_moments"
     file_name = "b_lovely_landscapes"
-    #file_name = "d_pet_pictures"
-    #file_name = "e_shiny_selfies"
+    # file_name = "d_pet_pictures"
+    # file_name = "e_shiny_selfies"
 
     print("processing file", file_name)
     print("MIN_SCORE_IS", MIN_SCORE)
