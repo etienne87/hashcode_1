@@ -47,7 +47,7 @@ def compute_score_transition(s1, s2):
     s_in_s1_not_in_s2 = len(s1)-s_intersection
     s_in_s2_not_in_s1 = len(s2)-s_intersection
 
-    score = min([s_intersection, s_in_s1_not_in_s2, s_in_s2_not_in_s1])
+    score = min(s_intersection, s_in_s1_not_in_s2, s_in_s2_not_in_s1)
     return score
 
 
