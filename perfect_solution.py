@@ -10,6 +10,7 @@ from compute_score import compute_score_transition, compute_score
 
 parser = argparse.ArgumentParser(description='Rainbow')
 parser.add_argument('--indice-input-file', type=int)
+parser.add_argument('--factor-loss-tag-in-pair', type=float)
 args = parser.parse_args()
 indice_file = args.indice_input_file
 if indice_file is None:
@@ -24,6 +25,11 @@ name_file_input = list_name_input[indice_file]
 MAX_HEURISTIC = heuristic_each_map[indice_file]
 MIN_HEURISTIC = 100
 initial_heurisitc_score_bien = MAX_HEURISTIC
+
+FACTOR_LOSS_TAG_IN_PAIR = args.factor_loss_tag_in_pair
+
+# The idea there is to take the first 8 first most interesting vertical, and then for all them check pairs and take the final best of all them, specific to E!
+NB_PAIR_TO_CHECK = 8 # Should take around 16 hours with 8...
 
 use_sorted = True
 
@@ -112,6 +118,7 @@ print("name_file_input = ", name_file_input)
 print("(len(all_tags_sorted) = ", len(all_tags_sorted))
 print("initial_heurisitc_score_bien= ", initial_heurisitc_score_bien)
 print("MIN_HEURISTIC= ", MIN_HEURISTIC)
+print("FACTOR_LOSS_TAG_IN_PAIR = ", FACTOR_LOSS_TAG_IN_PAIR)
 
 start_time = time.time()
 current_heurisitc_score_bien = initial_heurisitc_score_bien
@@ -197,10 +204,12 @@ while len(tab_position_photo_available) > 0 :
                 break
             
             tag_current_pair= compute_tag_pair_vertical(all_tags_sorted[position_vert_still_available], all_tags_sorted[position_max_current_score])
+            loss_tag_in_current_pair = (len(all_tags_sorted[position_vert_still_available]) + len(all_tags_sorted[position_max_current_score]) - len(tag_current_pair))
+#            print(max_current_score_vert)
             if left:
-                current_score_vert = compute_score_transition(tags_photo_left, tag_current_pair)
+                current_score_vert = compute_score_transition(tags_photo_left, tag_current_pair) - loss_tag_in_current_pair * FACTOR_LOSS_TAG_IN_PAIR
             else:
-                current_score_vert = compute_score_transition(tags_photo_right, tag_current_pair)
+                current_score_vert = compute_score_transition(tags_photo_right, tag_current_pair) - loss_tag_in_current_pair * FACTOR_LOSS_TAG_IN_PAIR
                 
             if current_score_vert >= max_current_score_vert:
                 max_current_score_vert = current_score_vert
@@ -228,7 +237,7 @@ while len(tab_position_photo_available) > 0 :
             position_photo_right = position_max_current_score
 
     if chosen_photo_is_vert:
-        loss_tag_in_pair = len(all_tags_sorted[position_max_current_score]) + len(all_tags_sorted[position_max_current_score_vert]) - len(set(all_tags_sorted[position_max_current_score] + all_tags_sorted[position_max_current_score_vert]))
+        loss_tag_in_pair = len(set(all_tags_sorted[position_max_current_score]).intersection(all_tags_sorted[position_max_current_score_vert]))
         if loss_tag_in_pair > 0:
             print("WE LOST SOME TAG AT THIS STEP, LOSS IS ", loss_tag_in_pair)
         tab_position_photo_available.remove(position_max_current_score)
@@ -254,11 +263,12 @@ for int_or_tuple in solution_final:
 print("name_file_input = ", name_file_input)
 print("(len(all_tags_sorted) = ", len(all_tags_sorted))
 print("final current_heurisitc_score_bien= ", current_heurisitc_score_bien)
+print("FACTOR_LOSS_TAG_IN_PAIR = ", FACTOR_LOSS_TAG_IN_PAIR)
 
 if use_sorted:
-    write_output(vrai_solution_final , "./data/"+name_file_input+"perfect_solution_sorted"+str(initial_heurisitc_score_bien)+".out")
+    write_output(vrai_solution_final , "./data/"+name_file_input+"perfect_solution"+str(FACTOR_LOSS_TAG_IN_PAIR)+".out")
 else:
-    write_output(vrai_solution_final , "./data/"+name_file_input+"perfect_solution"+str(initial_heurisitc_score_bien)+".out")
+    write_output(vrai_solution_final , "./data/"+name_file_input+"perfect_solution"+str(FACTOR_LOSS_TAG_IN_PAIR)+".out")
 #list_horizontal, list_vertical = input_func(file_path)
 
 #list_horizontal liste de liste avec id photo + set id tag
