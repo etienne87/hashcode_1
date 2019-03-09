@@ -29,9 +29,7 @@ initial_heurisitc_score_bien = MAX_HEURISTIC
 FACTOR_LOSS_TAG_IN_PAIR = args.factor_loss_tag_in_pair
 
 # The idea there is to take the first 8 first most interesting vertical, and then for all them check pairs and take the final best of all them, specific to E!
-NB_PAIR_TO_CHECK = 8 # Should take around 16 hours with 8...
-
-use_sorted = True
+NB_PAIR_TO_CHECK = 8 # 
 
 file_path = "./data/input/"+name_file_input+".txt"
 
@@ -132,7 +130,18 @@ while len(tab_position_photo_available) > 0 :
         print("len(tab_position_photo_available) = ", len(tab_position_photo_available) )
         print("duration = " , time.time() - start_time)
         start_time = time.time()
-    left = False
+        print("SAVING A BACKUP CAUSE WE NEVER KNOW")
+        vrai_solution_final_backup = []
+        for int_or_tuple in solution_final:
+            if type(int_or_tuple) == tuple:
+                vrai_solution_final_backup.append(str(all_ids_sorted[int_or_tuple[0]]) + " " + str(all_ids_sorted[int_or_tuple[1]]))
+            elif type(int_or_tuple) == int:
+                vrai_solution_final_backup.append(str(all_ids_sorted[int_or_tuple]))
+            else:
+                print("THAT S NOT NORMAL")
+                raise
+        write_output(vrai_solution_final_backup , "./data/backup/"+name_file_input+"last_perfect_solution_backup"+str(FACTOR_LOSS_TAG_IN_PAIR)+".out")
+
 #    position_max_current_score = tab_position_photo_available[0]
 #    current_score_left = compute_score_transition(all_tags[position_photo_left], all_tags[position_max_current_score])
 #    current_score_right = compute_score_transition(all_tags[position_photo_right], all_tags[position_max_current_score])
@@ -141,8 +150,9 @@ while len(tab_position_photo_available) > 0 :
 #
 #    max_current_score = max(current_score_left, current_score_right)
     find_any_heuristic = False
-    max_current_score = -1000
-    position_max_current_score = -1
+    tab_left = [False] * NB_PAIR_TO_CHECK
+    tab_max_current_score = [-1000] * NB_PAIR_TO_CHECK
+    tab_position_max_current_score = [-1] * NB_PAIR_TO_CHECK
     
     if type(position_photo_left) == tuple: # pair of vertical
         tags_photo_left = compute_tag_pair_vertical(all_tags_sorted[position_photo_left[0]], all_tags_sorted[position_photo_left[1]])
@@ -162,9 +172,9 @@ while len(tab_position_photo_available) > 0 :
         else:
             current_stop_criteria = min(current_heurisitc_score_bien, (len(all_tags_sorted[position_photo_still_available]) * (0.5 - FACTOR_LOSS_TAG_IN_PAIR)))
             
-        if current_stop_criteria < max_current_score:
+        if current_stop_criteria < min(tab_max_current_score):
             find_any_heuristic = True
-            if max_current_score >= current_heurisitc_score_bien:
+            if min(tab_max_current_score) >= current_heurisitc_score_bien:
                 current_heurisitc_score_bien = min(MAX_HEURISTIC,current_heurisitc_score_bien+1)
                 print("we found one, let's augment the heuristic", current_heurisitc_score_bien)
             break
@@ -177,77 +187,127 @@ while len(tab_position_photo_available) > 0 :
             current_score_left = 2*current_score_left
             current_score_right = 2*current_score_right
         
-        if current_score_right >= max_current_score and current_score_right >= current_score_left:
-            position_max_current_score = position_photo_still_available
-            max_current_score = current_score_right
-            left = False
+        if current_score_right >= min(tab_max_current_score) and current_score_right >= current_score_left:
+            indice_min_max_score = np.argmin(tab_max_current_score)
+            tab_position_max_current_score[indice_min_max_score] = position_photo_still_available
+            tab_max_current_score[indice_min_max_score] = current_score_right
+            tab_left[indice_min_max_score] = False
 
-        elif current_score_left >= max_current_score and current_score_left >= current_score_right:
-            position_max_current_score = position_photo_still_available
-            max_current_score = current_score_left
-            left = True
+        elif current_score_left >= min(tab_max_current_score) and current_score_left >= current_score_right:
+            indice_min_max_score = np.argmin(tab_max_current_score)
+            tab_position_max_current_score[indice_min_max_score] = position_photo_still_available
+            tab_max_current_score[indice_min_max_score]  = current_score_left
+            tab_left[indice_min_max_score]  = True
 
-    chosen_photo_is_vert = all_is_vert_sorted[position_max_current_score]
-    
-    if chosen_photo_is_vert: # We have now to look all remaining vert to form the best pair (we don't look right left anymore, cause it's already chosen)
-        max_current_score_vert = -1000
-        position_max_current_score_vert = -1
+    real_position_first_part_of_pair = -1
+    real_left = False
+
+    max_current_score_vert = -1000
+    position_max_current_score_vert = -1
+
+    for indice_in_max_current_score in range(len(tab_position_max_current_score)):        
+        position_max_current_score = tab_position_max_current_score[indice_in_max_current_score]
+        if position_max_current_score == -1:
+            print("WE ARE AT THE END! WE SHOULD SAVE THE CURRENT SOLUTION TO AVOID LOSING 30HOURS AGAIN...")
+            vrai_solution_final_backup = []
+            for int_or_tuple in solution_final:
+                if type(int_or_tuple) == tuple:
+                    vrai_solution_final_backup.append(str(all_ids_sorted[int_or_tuple[0]]) + " " + str(all_ids_sorted[int_or_tuple[1]]))
+                elif type(int_or_tuple) == int:
+                    vrai_solution_final_backup.append(str(all_ids_sorted[int_or_tuple]))
+                else:
+                    print("THAT S NOT NORMAL")
+                    raise
+            write_output(vrai_solution_final_backup , "./data/backup/"+name_file_input+"last_perfect_solution_backup"+str(FACTOR_LOSS_TAG_IN_PAIR)+".out")
+            continue
+        left = tab_left[indice_in_max_current_score]
         
-        tab_position_vertical_available.remove(position_max_current_score)
-        for position_vert_still_available in tab_position_vertical_available:
-
-            current_stop_criteria = min(current_heurisitc_score_bien, (len(all_tags_sorted[position_max_current_score]) + len(all_tags_sorted[position_vert_still_available])) * (0.5 - FACTOR_LOSS_TAG_IN_PAIR))            
-            if current_stop_criteria < max_current_score_vert:
-                find_any_heuristic = True
-                if max_current_score_vert >= current_heurisitc_score_bien:
-                    current_heurisitc_score_bien = min(MAX_HEURISTIC,current_heurisitc_score_bien+1)
-                    print("we found one, let's augment the heuristic", current_heurisitc_score_bien)
-                break
+        chosen_photo_is_vert = all_is_vert_sorted[position_max_current_score]
+    
+        if chosen_photo_is_vert: # We have now to look all remaining vert to form the best pair (we don't look right left anymore, cause it's already chosen)
             
-            tag_current_pair= compute_tag_pair_vertical(all_tags_sorted[position_vert_still_available], all_tags_sorted[position_max_current_score])
-            loss_tag_in_current_pair = (len(all_tags_sorted[position_vert_still_available]) + len(all_tags_sorted[position_max_current_score]))
-            # IDEA we still want to say lost tag is even worse than having one more tag lenght!!!
-#            loss_tag_in_current_pair = 2*(len(all_tags_sorted[position_vert_still_available]) + len(all_tags_sorted[position_max_current_score])) - len(tag_current_pair)
-#            print(max_current_score_vert)
-            if left:
-                current_score_vert = compute_score_transition(tags_photo_left, tag_current_pair) - loss_tag_in_current_pair * FACTOR_LOSS_TAG_IN_PAIR
-            else:
-                current_score_vert = compute_score_transition(tags_photo_right, tag_current_pair) - loss_tag_in_current_pair * FACTOR_LOSS_TAG_IN_PAIR
+#            tab_position_vertical_available.remove(position_max_current_score)
+            for position_vert_still_available in tab_position_vertical_available:
+                if position_vert_still_available == position_max_current_score:
+                    continue
+                current_stop_criteria = min(current_heurisitc_score_bien, (len(all_tags_sorted[position_max_current_score]) + len(all_tags_sorted[position_vert_still_available])) * (0.5 - FACTOR_LOSS_TAG_IN_PAIR))            
+                if current_stop_criteria < max_current_score_vert:
+                    find_any_heuristic = True
+                    if max_current_score_vert >= current_heurisitc_score_bien:
+                        current_heurisitc_score_bien = min(MAX_HEURISTIC,current_heurisitc_score_bien+1)
+                        print("we found one, let's augment the heuristic", current_heurisitc_score_bien)
+                    break
                 
-            if current_score_vert >= max_current_score_vert:
-                max_current_score_vert = current_score_vert
-                position_max_current_score_vert = position_vert_still_available
+                tag_current_pair= compute_tag_pair_vertical(all_tags_sorted[position_vert_still_available], all_tags_sorted[position_max_current_score])
+                #loss_tag_in_current_pair = (len(all_tags_sorted[position_vert_still_available]) + len(all_tags_sorted[position_max_current_score]))
+                # IDEA we still want to say lost tag is even worse than having one more tag lenght!!!
+                loss_tag_in_current_pair = 2*(len(all_tags_sorted[position_vert_still_available]) + len(all_tags_sorted[position_max_current_score])) - len(tag_current_pair)
+    #            print(max_current_score_vert)
+                if left:
+                    current_score_vert = compute_score_transition(tags_photo_left, tag_current_pair) - loss_tag_in_current_pair * FACTOR_LOSS_TAG_IN_PAIR
+                else:
+                    current_score_vert = compute_score_transition(tags_photo_right, tag_current_pair) - loss_tag_in_current_pair * FACTOR_LOSS_TAG_IN_PAIR
+                    
+                if current_score_vert >= max_current_score_vert:
+                    max_current_score_vert = current_score_vert
+                    position_max_current_score_vert = position_vert_still_available
+                    real_position_first_part_of_pair = position_max_current_score
+                    real_left = left
+
+    # We know need to compare the best vertical with the best horizontal in all our choice!
+    best_score_horizontal = -1000
+    best_position_horizontal = -1
+    best_horiz_left = False
+    for indice_in_max_current_score in range(len(tab_position_max_current_score)):
+        position_max_current_score = tab_position_max_current_score[indice_in_max_current_score]
+        if position_max_current_score == -1:
+            print("WE ARE AT THE END!")
+            continue
+        chosen_photo_is_vert = all_is_vert_sorted[position_max_current_score]
+        
+        if not chosen_photo_is_vert:
+            if best_score_horizontal <= tab_max_current_score[indice_in_max_current_score]:
+                best_score_horizontal = tab_max_current_score[indice_in_max_current_score]
+                best_position_horizontal = tab_position_max_current_score[indice_in_max_current_score]
+                best_horiz_left = tab_left[indice_in_max_current_score]
+                
+    final_chosen_photo_is_vert = (best_score_horizontal <= max_current_score_vert)
+    if final_chosen_photo_is_vert:
+        final_left = real_left
+    else:
+        final_left = best_horiz_left
 
     if not find_any_heuristic:
         if current_heurisitc_score_bien > MIN_HEURISTIC:
             current_heurisitc_score_bien = max(MIN_HEURISTIC,current_heurisitc_score_bien-1)
             print("we didn't found one, let's diminue the heuristic", current_heurisitc_score_bien)
 
-    if left:
-        if chosen_photo_is_vert:
-            solution_final.insert(0,(position_max_current_score, position_max_current_score_vert))
-            position_photo_left = (position_max_current_score, position_max_current_score_vert)
+    if final_left:
+        if final_chosen_photo_is_vert:
+            solution_final.insert(0,(real_position_first_part_of_pair, position_max_current_score_vert))
+            position_photo_left = (real_position_first_part_of_pair, position_max_current_score_vert)
         else:
-            solution_final.insert(0,position_max_current_score)
-            position_photo_left = position_max_current_score
+            solution_final.insert(0,best_position_horizontal)
+            position_photo_left = best_position_horizontal
 
     else:
-        if chosen_photo_is_vert:
-            solution_final.append((position_max_current_score, position_max_current_score_vert))
-            position_photo_right = (position_max_current_score, position_max_current_score_vert)
+        if final_chosen_photo_is_vert:
+            solution_final.append((real_position_first_part_of_pair, position_max_current_score_vert))
+            position_photo_right = (real_position_first_part_of_pair, position_max_current_score_vert)
         else:
-            solution_final.append(position_max_current_score)
-            position_photo_right = position_max_current_score
+            solution_final.append(best_position_horizontal)
+            position_photo_right = best_position_horizontal
 
-    if chosen_photo_is_vert:
-        loss_tag_in_pair = len(set(all_tags_sorted[position_max_current_score]).intersection(all_tags_sorted[position_max_current_score_vert]))
+    if final_chosen_photo_is_vert:
+        loss_tag_in_pair = len(set(all_tags_sorted[real_position_first_part_of_pair]).intersection(all_tags_sorted[position_max_current_score_vert]))
         if loss_tag_in_pair > 0:
             print("WE LOST SOME TAG AT THIS STEP, LOSS IS ", loss_tag_in_pair)
-        tab_position_photo_available.remove(position_max_current_score)
+        tab_position_photo_available.remove(real_position_first_part_of_pair)
         tab_position_photo_available.remove(position_max_current_score_vert)
+        tab_position_vertical_available.remove(real_position_first_part_of_pair)
         tab_position_vertical_available.remove(position_max_current_score_vert)
     else:
-        tab_position_photo_available.remove(position_max_current_score)
+        tab_position_photo_available.remove(best_position_horizontal)
 
 #print("solution_final = ", solution_final)
 
@@ -268,10 +328,8 @@ print("(len(all_tags_sorted) = ", len(all_tags_sorted))
 print("final current_heurisitc_score_bien= ", current_heurisitc_score_bien)
 print("FACTOR_LOSS_TAG_IN_PAIR = ", FACTOR_LOSS_TAG_IN_PAIR)
 
-if use_sorted:
-    write_output(vrai_solution_final , "./data/"+name_file_input+"last_perfect_solution"+str(FACTOR_LOSS_TAG_IN_PAIR)+".out")
-else:
-    write_output(vrai_solution_final , "./data/"+name_file_input+"last_perfect_solution"+str(FACTOR_LOSS_TAG_IN_PAIR)+".out")
+write_output(vrai_solution_final , "./data/"+name_file_input+"last_perfect_solution"+str(FACTOR_LOSS_TAG_IN_PAIR)+".out")
+
 #list_horizontal, list_vertical = input_func(file_path)
 
 #list_horizontal liste de liste avec id photo + set id tag
