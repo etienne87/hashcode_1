@@ -11,6 +11,7 @@ from compute_score import compute_score_transition, compute_score
 parser = argparse.ArgumentParser(description='Rainbow')
 parser.add_argument('--indice-input-file', type=int)
 parser.add_argument('--factor-loss-tag-in-pair', type=float)
+parser.add_argument('--nb-pair-to-check', type=int, default= 8)
 args = parser.parse_args()
 indice_file = args.indice_input_file
 if indice_file is None:
@@ -29,7 +30,7 @@ initial_heurisitc_score_bien = MAX_HEURISTIC
 FACTOR_LOSS_TAG_IN_PAIR = args.factor_loss_tag_in_pair
 
 # The idea there is to take the first 8 first most interesting vertical, and then for all them check pairs and take the final best of all them, specific to E!
-NB_PAIR_TO_CHECK = 8 # 
+NB_PAIR_TO_CHECK = args.nb_pair_to_check
 
 file_path = "./data/input/"+name_file_input+".txt"
 
