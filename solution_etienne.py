@@ -4,6 +4,8 @@ import random
 import input_func
 import compute_score
 from solution_raphael import get_horiz_from_vert
+from tqdm import tqdm
+
 
 def write_output(result_list, filename):
     with open(filename, 'w') as file:
@@ -56,10 +58,6 @@ def maximize_horiz_early_stop(horiz, n):
     return slideshow, total_score
 
 def maximize_horiz_brute_force(horiz, n, slideshow=None, total_score=0, taken=None, use_local=True, return_local=False):
-
-
-
-
     if slideshow is None:
         slideshow = []
 
@@ -143,21 +141,18 @@ def maximize_groups_brute_force(groups):
         pass
 
 
-def maximize_bruteforce_cluster(horiz, n, k=100):
+def maximize_bruteforce_cluster(horiz, n, k=1000):
     size = n/k
 
     #V1
-    groups = [horiz[max(0,i*size-size/2):min(n,(i+1)*size+size/2)] for i in range(k)]
+    overlap = size
+    groups = [horiz[max(0,i*size-overlap):min(n,(i+1)*size+overlap)] for i in range(k)]
     last = -1
     slideshow = None
     score = 0
     taken = set()
     for i in range(k):
         slideshow, score = maximize_horiz_brute_force(groups[i], len(groups[i]), slideshow, score, taken)
-
-    #V2
-    #groups = [horiz[i*size:(i+1)*size] for i in range(k)]
-
 
     return slideshow, score
 
@@ -176,88 +171,36 @@ def make_undic(dic):
     return undic
 
 
-def random_solution(all, n, threshold=1):
-    #take n @ random that match
-    slideshow = [random.randint(0, n)]
-    begin, end = slideshow[0], slideshow[0]
-    total_score = 0
+
+def get_horiz_from_vert_etienne(list_vert):
+    list_horiz_bonus = []
     taken = set()
-    print('make random solution: ')
-    rng = range(n)
-    for i in range(n):
+    for i in tqdm(range(len(list_vert))):
         if i in taken:
             continue
-
-        max_score = 0
-        max_index = min(n - 1, i + 1)
-        is_head = False
-        random.shuffle(rng)
-        for j in rng:
-
-            if j in taken:
+        a = list_vert[i]
+        aset = set(a[1])
+        max_len = 0
+        max_idx = 0
+        for j in range(len(list_vert)):
+            if j in taken or i == j:
                 continue
+            b = list_vert[j]
+            bset = set(b[1])
 
-            s1 = compute_score.compute_score_transition(all[i][1], all[begin][1])
-            s2 = compute_score.compute_score_transition(all[end][1], all[i][1])
+            ulen = len(aset.union(bset))
+            if ulen > max_len:
+                max_len = ulen
+                max_idx = j
 
-            smax = max(s1, s2)
-            if smax > max_score:
-                is_head = s1 > s2
-                max_score = smax
-                max_index = i
-
-            if smax > threshold:
+            if ulen > len(a):
                 break
 
-        photo_id = all[max_index][0]
-        if is_head:
-            slideshow.insert(0, photo_id)
-            begin = max_index
-        else:
-            slideshow.append(photo_id)
-            end = max_index
-
-        total_score += max_score
-        taken.add(max_index)
-        print('score: ', total_score * 1e-3, i, '/', n)
-
-    return slideshow, total_score
+        b = list_vert[max_idx]
+        list_horiz_bonus += [(str(a[0])+" "+str(b[0]), list(set(a[1]+b[1])))]
 
 
-def evaluate(photo_ids, all_tags):
-    slideshow = compute_score.photo_ids_to_tags(photo_ids, all_tags)
-    score = 0
-    for i in range(len(slideshow) - 1):
-        score += compute_score.compute_score_transition(slideshow[i], slideshow[i + 1])
-    return score
-
-# def mutate(n_muts):
-#     for i in range(n_muts):
-#
-
-def hill_climbing(all, n, popsize=5, max_iter=1000):
-    population = []
-    for i in range(popsize):
-        sol, score = random_solution(all, 100)
-        population.append((sol, score))
-
-    for iter in range(max_iter):
-        #mutate population
-        population = []
-
-        #evaluate
-        population = [(item[0], evaluate(item[0])) for item in population]
-        population = sorted(population, key=lambda x: x[1], reverse=True)
-
-        print('best score: ', population[0][1])
-
-        #selection, add random
-        population = population[:int(popsize*2/3)]
-        for i in range(len(population), popsize):
-            sol, score = random_solution(all, n)
-            population.append((sol,score))
-
-
+    return list_horiz_bonus
 
 
 if __name__ == '__main__':
@@ -275,7 +218,10 @@ if __name__ == '__main__':
 
     lh = list(zip(horizontal_ids, horizontals))
     vh = list(zip(vertical_ids, verticals))
-    lh = lh + get_horiz_from_vert(vh)
+
+    vh_sorted = sort_by_num_tags(vh)
+
+    lh = lh + get_horiz_from_vert_etienne(vh_sorted)
 
 
     #sort by num tags
@@ -289,7 +235,8 @@ if __name__ == '__main__':
     print('write output: ')
     write_output(slideshow, out_path)
 
-    print('confirm score: ')
-    compute_score.compute_score(file_path, out_path)
+    submit_score = compute_score.compute_score(file_path, out_path)
+    print('confirm score: ', submit_score)
+
 
 
