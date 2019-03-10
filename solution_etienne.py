@@ -1,4 +1,5 @@
 from __future__ import print_function
+import os
 import time
 import numpy as np
 import input_func
@@ -6,13 +7,19 @@ import compute_score
 from solution_raphael import get_horiz_from_vert
 
 
+def write_output(result_list, filename):
+    with open(filename, 'w') as file:
+        file.write(str(len(result_list))+"\n")
+        for line in result_list:
+            file.write(str(line)+"\n")
+
 def maximize_horiz(horiz, n):
     slideshow = []
     taken = set()
     total_score = 0
 
     begin, end = 0, 0
-    slideshow.append(horiz[0])
+    slideshow.append(0)
 
     for j in range(1, n):
         max_score = 0
@@ -34,11 +41,12 @@ def maximize_horiz(horiz, n):
             if smax > 2:
                 break
 
+        photo_id = horiz[max_index][0]
         if is_head:
-            slideshow.insert(0, max_index)
+            slideshow.insert(0, photo_id)
             begin = max_index
         else:
-            slideshow.append(horiz[max_index])
+            slideshow.append(photo_id)
             end = max_index
 
         j = max_index
@@ -50,13 +58,9 @@ def maximize_horiz(horiz, n):
     return slideshow, total_score
 
 
-#def merge_verticals(vertical, vertical_ids):
-
-
-
-
 if __name__ == '__main__':
     file_path = "data/d_pet_pictures.txt"
+    out_path = os.path.splitext(file_path)[0] + "_soluce.txt"
 
     horizontals, horizontal_ids, verticals, vertical_ids, dic, tags = input_func.input_func(file_path)
 
@@ -78,5 +82,9 @@ if __name__ == '__main__':
     slideshow, score = maximize_horiz(final, len(final))
     print('total score: ', score)
 
+    write_output(slideshow, out_path)
+
+    #compute score
+    compute_score.compute_score(file_path, out_path)
 
 
